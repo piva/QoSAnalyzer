@@ -492,5 +492,83 @@ public class ReducerTest {
 		
 		assertEquals(12, r.reduce(), 1e-9);
 	}
+	
+	@Test
+	public void testBusinessProcess(){
+		//	Business Process Model And Notation P. 299
+		
+		final int nodes = 14;
+		
+		int adj[][] = new int[nodes][nodes];
+		double prob[][] = new double[nodes][nodes];
+		double times[] = new double[nodes];
+		Label labels[] = new Label[nodes];
+		
+		for(int i = 0; i < nodes; i++){
+			times[i] = 0.0;
+			for(int j = 0; j < nodes; j++){
+				adj[i][j] = 0;
+			}
+		}
+		
+		adj[0][1] = 1;
+		adj[1][2] = 1;
+		adj[2][3] = 1;
+		adj[2][10] = 1;
+		adj[3][4] = 1;
+		adj[4][5] = 1;
+		adj[5][9] = 1;
+		adj[4][6] = 1;
+		adj[6][7] = 1;
+		adj[7][8] = 1;
+		adj[8][9] = 1;
+		adj[9][11] = 1;
+		adj[10][11] = 1;
+		adj[11][12] = 1;
+		adj[12][13] = 1;
+
+		for(int i = 0; i < nodes; i++){
+			for(int j = 0; j < nodes; j++){
+				prob[i][j] = 1.0;
+			}
+		}
+		
+		prob[2][3] = 0.5;
+		prob[2][10] = 0.5;
+		
+		labels[0] = Label.START;
+		labels[1] = Label.ACTIVITY;
+		labels[2] = Label.EXCLUSIVE_SPLIT;
+		labels[3] = Label.ACTIVITY;
+		labels[4] = Label.FORK_SPLIT;
+		labels[5] = Label.ACTIVITY;
+		labels[6] = Label.ACTIVITY;
+		labels[7] = Label.ACTIVITY;
+		labels[8] = Label.ACTIVITY;
+		labels[9] = Label.FORK_JOIN;
+		labels[10] = Label.ACTIVITY;
+		labels[11] = Label.EXCLUSIVE_JOIN;
+		labels[12] = Label.ACTIVITY;
+		labels[13] = Label.END;
+		
+		times[0] = 0.0;
+		times[1] = 1.0;
+		times[2] = 0.0;
+		times[3] = 1.0;
+		times[4] = 0.0;
+		times[5] = 1.0;
+		times[6] = 1.0;
+		times[7] = 1.0;
+		times[8] = 1.0;
+		times[9] = 0.0;
+		times[10] = 2.0;
+		times[11] = 0.0;
+		times[12] = 1.0;
+		times[13] = 0.0;
+		
+		Reducer r = new Reducer(adj, prob, times, labels);
+		
+		assertEquals(4.0, r.reduce(), 1e-9);
+	}
 
 }

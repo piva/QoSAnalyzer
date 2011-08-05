@@ -50,7 +50,7 @@ public class Reducer {
 		
 		for(int i = 0; i < numVertices; i++){
 			if(inDegree[i] == 0){
-				//TODO: should be start vertex
+				//TODO: check if is a start vertex
 				ts.push(i);
 			}
 		}
