@@ -57,18 +57,7 @@ public class Reducer {
 		
 		while(ts.size() > 0){
 			int vertex = ts.removeFirst();
-			
-			if(labels[vertex].isSplitGateway()){
-				gateways.push(vertex);
-			} else if(labels[vertex].isJoinGateway()){
-				
-				if(gateways.empty()){
-					throw new RuntimeException("Join gateway with no corresponding split gateway");
-				}
-				
-				// TODO - Check if closing gateway corresponds to open (exclusive - exclusive, fork - fork, ...)
-				reduceSplitJoinGateway(gateways.pop(), vertex);
-			}
+			System.out.println("Removing vertex " + vertex);
 
 			for(int i = 0; i < numVertices; i++){
 				if(adj[vertex][i] == 1){
@@ -78,6 +67,21 @@ public class Reducer {
 					}
 				}
 			}
+			
+			if(labels[vertex].isSplitGateway()){
+				System.out.println("Pushing split gateway " + vertex);
+				gateways.push(vertex);
+			} else if(labels[vertex].isJoinGateway()){
+				System.out.println("Found join gateway " + vertex);
+				
+				if(gateways.empty()){
+					throw new RuntimeException("Join gateway with no corresponding split gateway");
+				}
+				
+				// TODO - Check if closing gateway corresponds to open (exclusive - exclusive, fork - fork, ...)
+				reduceSplitJoinGateway(gateways.pop(), vertex);
+			}
+
 		}
 		
 		while(!gateways.empty()){
@@ -135,20 +139,33 @@ public class Reducer {
 		int inVertex = getOnlyInVertex(split);
 		int outVertex = getOnlyOutVertex(join);
 		
-		times[inVertex] += time + times[split] + times[join];
+		System.out.println("In " + inVertex + " out " + outVertex);
 		
-		vertices[split] = vertices[join] = 0;
-		
-		adj[inVertex][split] = 0;
+		times[split] += time + times[join];
+		vertices[join] = 0;
 		adj[join][outVertex] = 0;
+		adj[split][outVertex] = 1;
+		labels[split] = Label.ACTIVITY;
 		
-		adj[inVertex][outVertex] = 1;
+		if(isSequence(split, outVertex)){
+			split = reduceSequence(new Edge(split, outVertex));
+		}
 		
-		reduceSequence(new Edge(inVertex, outVertex));
-		
+		if(isSequence(inVertex, split)){
+			split = reduceSequence(new Edge(inVertex, split));
+		}
+	}
+	
+	private boolean isSequence(int v1, int v2)
+	{
+		return vertices[v1] != 0 && vertices[v2] != 0
+					&& !labels[v1].isGateway() && !labels[v2].isGateway();
 	}
 
-	private void reduceSequence(Edge e){
+	// returns the resulting vertex
+	private int reduceSequence(Edge e){
+		
+		System.out.println("Reducing sequence " + e.src + " " + e.dst);
 		
 		// Fix edge and metrics: a->b->c becomes (a+b)->c
 			
@@ -166,36 +183,11 @@ public class Reducer {
 
 		times[e.src] += times[e.dst];
 		
+		return e.src;
 	}
 	
-//	private void reduceForkSplit(int forkVertex){
-//		
-//		
-//		// Reduce all branches out of the fork
-//		double maxTime = 0.0;
-//		for(int i = 0; i < numVertices; i++){
-//			if(vertices[i] == 1 && adj[forkVertex][i] == 1){
-//				if(labels[i] != Label.END){
-//					throw new RuntimeException("Fork has not been fully reduced to END vertices");
-//				}
-//				maxTime = Math.max(maxTime, times[i]);
-//				vertices[i] = 0;
-//				adj[forkVertex][i] = 0;
-//			}
-//		}
-//		
-//		labels[forkVertex] = Label.END;
-//		times[forkVertex] += maxTime;
-//
-//		// reduce fork vertex a->forkVertex to (a+forkVertex)
-//		int inVertex = getOnlyInVertex(forkVertex);
-//		
-//		reduceSequence(new Edge(inVertex, forkVertex));
-//		
-//	}
-
 	private int getOnlyInVertex(int vertex) {
-		System.out.println("vertex " + vertex);
+		System.out.println("getOnlyInVertex vertex " + vertex);
 		int inVertex = -1;
 		for(int i = 0; i < numVertices; i++){
 			if(vertices[i] == 1 && adj[i][vertex] == 1){
@@ -246,28 +238,21 @@ public class Reducer {
 		return null;
 	}
 	
-//	private int findForkSplitVertex(){
-//		for(int i = 0; i < numVertices; i++){
-//			if(vertices[i] == 1 && labels[i] == Label.FORK_SPLIT){
-//				return i;
-//			}
-//		}
-//		return -1;
-//	}
-	
 	public double reduce(){
 		
 		Edge e;
 		
+		System.out.println("Reducing sequences");
+		
 		while((e = findSequence())!= null){
 			reduceSequence(e);
 		}
+		
+		Utils.printGraph(adj, prob, times, labels, vertices);
+		
+		System.out.println("Running topological sort");
 
 		topologicalSorting();
-//		int v;
-//		while((v = findForkSplitVertex()) >= 0){
-//			reduceForkSplit(v);
-//		}
 		
 		for(int i = 0; i < numVertices; i++){
 			if(vertices[i] != 0){

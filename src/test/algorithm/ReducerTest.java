@@ -18,7 +18,7 @@ public class ReducerTest {
 		adj[0][0] = 0;
 		adj[0][1] = 1;
 		adj[1][0] = 0;
-		adj[1][0] = 0;
+		adj[1][1] = 0;
 		
 		for(int i = 0; i < 2; i++){
 			for(int j = 0; j < 2; j++){
@@ -34,7 +34,7 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, prob, times, labels);
 		
-		assertEquals(2.0, r.reduce(), 1e-9);
+		assertEquals(times[0] + times[1], r.reduce(), 1e-9);
 		
 	}
 	
@@ -568,7 +568,7 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, prob, times, labels);
 		
-		assertEquals(4.0, r.reduce(), 1e-9);
+		assertEquals(5.0, r.reduce(), 1e-9);
 	}
 
 }
