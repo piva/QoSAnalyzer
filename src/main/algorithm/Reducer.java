@@ -4,27 +4,26 @@ import java.util.LinkedList;
 import java.util.Stack;
 
 import main.model.Label;
+import main.model.Vertex;
 
 public class Reducer {
 	
 	private int adj[][];
 	private double prob[][]; // Edge probability
 	
-	private Label labels[];
-	private double times[];
 	private int numVertices;
-	private int vertices[];
+	private int active[];
+	private Vertex vertices[];
 	
-	public Reducer(int adj[][], double prob[][], double times[], Label labels[]){
+	public Reducer(int adj[][], int numVertices, double prob[][], Vertex vertices[]){
 		this.adj = adj;
 		this.prob = prob;
-		this.labels = labels;
-		this.times = times;
+		this.vertices = vertices;
 		
-		numVertices = adj[0].length;
-		vertices = new int[numVertices];
+		this.numVertices = numVertices;
+		active = new int[numVertices];
 		for(int i = 0; i < numVertices; i++){
-			vertices[i] = 1;
+			active[i] = 1;
 		}
 	}
 	
@@ -58,6 +57,7 @@ public class Reducer {
 		while(ts.size() > 0){
 			int vertex = ts.removeFirst();
 			System.out.println("Removing vertex " + vertex);
+			Utils.printGraph(adj, numVertices, prob, active, vertices);
 
 			for(int i = 0; i < numVertices; i++){
 				if(adj[vertex][i] == 1){
@@ -68,10 +68,10 @@ public class Reducer {
 				}
 			}
 			
-			if(labels[vertex].isSplitGateway()){
+			if(vertices[vertex].getLabel().isSplitGateway()){
 				System.out.println("Pushing split gateway " + vertex);
 				gateways.push(vertex);
-			} else if(labels[vertex].isJoinGateway()){
+			} else if(vertices[vertex].getLabel().isJoinGateway()){
 				System.out.println("Found join gateway " + vertex);
 				
 				if(gateways.empty()){
@@ -99,18 +99,19 @@ public class Reducer {
 		double time = 0.0;
 		
 		for(int i = 0; i < numVertices; i++){
-			if(vertices[i] == 1 && adj[split][i] == 1){
+			if(active[i] == 1 && adj[split][i] == 1){
 				adj[split][i] = 0;
-				vertices[i] = 0;
+				active[i] = 0;
 				
-				if(labels[split] == Label.FORK_SPLIT){
-					time = Math.max(time, times[i]);
-				} else if (labels[split] == Label.INCLUSIVE_SPLIT
-						|| labels[split] == Label.EXCLUSIVE_SPLIT) {
-					time += prob[split][i] * times[i]; 
+				if(vertices[split].getLabel() == Label.FORK_SPLIT){
+					time = Math.max(time, vertices[i].getTime());
+				} else if (vertices[split].getLabel() == Label.INCLUSIVE_SPLIT
+						|| vertices[split].getLabel() == Label.EXCLUSIVE_SPLIT) {
+					time += prob[split][i] * vertices[i].getTime(); 
 				}
 			}
 		}
+		System.out.println("time " + time);
 		
 		return time;
 	}
@@ -122,13 +123,13 @@ public class Reducer {
 		
 		int inVertex = getOnlyInVertex(split);
 		
-		times[inVertex] += time + times[split];
+		vertices[inVertex].setTime(vertices[inVertex].getTime() + time + vertices[split].getTime());
 		
-		vertices[split] = 0;
+		active[split] = 0;
 		
 		adj[inVertex][split] = 0;
 		
-		labels[inVertex] = Label.END;
+		vertices[inVertex].setLabel(Label.END);
 	}
 
 	private void reduceSplitJoinGateway(int split, int join) {
@@ -140,12 +141,12 @@ public class Reducer {
 		int outVertex = getOnlyOutVertex(join);
 		
 		System.out.println("In " + inVertex + " out " + outVertex);
-		
-		times[split] += time + times[join];
-		vertices[join] = 0;
+
+		vertices[split].setTime(time + vertices[split].getTime() + vertices[join].getTime());
+		active[join] = 0;
 		adj[join][outVertex] = 0;
 		adj[split][outVertex] = 1;
-		labels[split] = Label.ACTIVITY;
+		vertices[split].setLabel(Label.ACTIVITY);
 		
 		if(isSequence(split, outVertex)){
 			split = reduceSequence(new Edge(split, outVertex));
@@ -158,19 +159,18 @@ public class Reducer {
 	
 	private boolean isSequence(int v1, int v2)
 	{
-		return vertices[v1] != 0 && vertices[v2] != 0
-					&& !labels[v1].isGateway() && !labels[v2].isGateway();
+		return active[v1] != 0 && active[v2] != 0
+					&& !vertices[v1].getLabel().isGateway() && !vertices[v2].getLabel().isGateway();
 	}
 
 	// returns the resulting vertex
 	private int reduceSequence(Edge e){
-		
 		System.out.println("Reducing sequence " + e.src + " " + e.dst);
 		
 		// Fix edge and metrics: a->b->c becomes (a+b)->c
 			
 		adj[e.src][e.dst] = 0;
-		vertices[e.dst] = 0; 
+		active[e.dst] = 0; 
 		
 		int nextVertex;
 		
@@ -178,10 +178,10 @@ public class Reducer {
 			nextVertex = getOnlyOutVertex(e.dst); 
 			adj[e.src][nextVertex] = 1;
 		} catch(RuntimeException exception){
-			labels[e.src] = Label.END;
+			vertices[e.src].setLabel(Label.END);
 		}
 
-		times[e.src] += times[e.dst];
+		vertices[e.src].setTime(vertices[e.src].getTime() + vertices[e.dst].getTime());
 		
 		return e.src;
 	}
@@ -190,7 +190,7 @@ public class Reducer {
 		System.out.println("getOnlyInVertex vertex " + vertex);
 		int inVertex = -1;
 		for(int i = 0; i < numVertices; i++){
-			if(vertices[i] == 1 && adj[i][vertex] == 1){
+			if(active[i] == 1 && adj[i][vertex] == 1){
 				System.out.println("found vertex " + i);
 				if(inVertex != -1){
 					throw new RuntimeException("Vertex has more than one in edge");
@@ -226,9 +226,8 @@ public class Reducer {
 	}
 
 	private Edge findSequence() {
-		
-		for(int i = 0; i < numVertices; i++) if(vertices[i] != 0 && !labels[i].isGateway()){
-			for(int j = 0; j < numVertices; j++) if(vertices[j] != 0 && !labels[j].isGateway()){
+		for(int i = 0; i < numVertices; i++) if(active[i] != 0 && !vertices[i].getLabel().isGateway()){
+			for(int j = 0; j < numVertices; j++) if(active[j] != 0 && !vertices[j].getLabel().isGateway()){
 				if(adj[i][j] == 1){
 					return new Edge(i, j); 
 				}
@@ -248,15 +247,15 @@ public class Reducer {
 			reduceSequence(e);
 		}
 		
-		Utils.printGraph(adj, prob, times, labels, vertices);
+		Utils.printGraph(adj, numVertices, prob, active, vertices);
 		
 		System.out.println("Running topological sort");
 
 		topologicalSorting();
 		
 		for(int i = 0; i < numVertices; i++){
-			if(vertices[i] != 0){
-				return times[i];
+			if(active[i] != 0){
+				return vertices[i].getTime();
 			}
 		}
 		return -1.0;

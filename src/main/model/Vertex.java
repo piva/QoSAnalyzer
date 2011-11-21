@@ -6,16 +6,28 @@ public class Vertex {
 	private Label label;
 	
 	private double time;
+	private double reliability;
+
+	public Vertex(int id) {
+		this.id = id;
+	}
 	
 	public Vertex(int id, Label label) {
-		super();
+		this(id);
 		this.id = id;
 		this.label = label;
 	}
 	
-	public Vertex(int id, Label label, double time){
+	public Vertex(int id, double time, double reliability){
+		this(id);
+		this.time = time;
+		this.reliability = reliability;
+	}
+	
+	public Vertex(int id, Label label, double time, double reliability){
 		this(id, label);
 		this.time = time;
+		this.reliability = reliability;
 	}
 
 	public int getId() {
@@ -36,6 +48,18 @@ public class Vertex {
 	
 	public double getTime(){
 		return time;
+	}
+	
+	public void setTime(double time){
+		this.time = time;
+	}
+
+	public double getReliability() {
+		return reliability;
+	}
+
+	public void setReliability(double reliability) {
+		this.reliability = reliability;
 	}
 
 }
