@@ -1,12 +1,22 @@
 package main.algorithm;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 
+import main.metrics.Metric;
+import main.model.Edge;
 import main.model.Label;
 import main.model.Vertex;
 
 public class Reducer {
+	
+	List<String> metricNames;
+	List<Metric> metricObjects;
+	
+	List< List<Vertex> > metricVertices; // Copy of the vertices list for each metric
+	List< List<Double> > metricValues; // value associated with each metric
 	
 	private int adj[][];
 	private double prob[][]; // Edge probability
@@ -15,7 +25,16 @@ public class Reducer {
 	private int active[];
 	private Vertex vertices[];
 	
+	private int remainingVertex;
+	
 	public Reducer(int adj[][], int numVertices, double prob[][], Vertex vertices[]){
+		remainingVertex = -1;
+		
+		metricNames = new ArrayList<String>();
+		metricObjects = new ArrayList<Metric>();
+		metricValues = new ArrayList<List<Double>>();
+		metricVertices = new ArrayList<List<Vertex>>();
+		
 		this.adj = adj;
 		this.prob = prob;
 		this.vertices = vertices;
@@ -25,6 +44,36 @@ public class Reducer {
 		for(int i = 0; i < numVertices; i++){
 			active[i] = 1;
 		}
+	}
+	
+	public void registerMetric(String name, Metric metric){
+		metricNames.add(name);
+		metricObjects.add(metric);
+		
+		List<Vertex> initialVertices = new ArrayList<Vertex>();
+		List<Double> initialValues = new ArrayList<Double>();
+		for(int i = 0; i < numVertices; i++){
+			// create a vertex copy so it doesn't use the same
+			initialVertices.add(new Vertex(vertices[i]));
+			initialValues.add(metric.prepare(vertices[i]));
+		}
+		
+		metricVertices.add(initialVertices);
+		metricValues.add(initialValues);
+	}
+	
+	public Double getMetricResult(String name){
+		if(remainingVertex == -1){
+			throw new RuntimeException("Something went wrong...");
+		}
+		
+		for(int i = 0; i < metricNames.size(); i++){
+			if(metricNames.get(i).equals(name)){
+				return metricValues.get(i).get(remainingVertex);
+			}
+		}
+		
+		throw new RuntimeException("Something went wrong...");
 	}
 	
 	private void topologicalSorting(){
@@ -119,21 +168,40 @@ public class Reducer {
 	private void reduceSplitGateway(int split) {
 		System.out.println("reduceSplitGateway " + split);
 		
-		double time = getTimesOfSplitGateway(split);
+		List<Edge> outEdges = new ArrayList<Edge>();
 		
-		int inVertex = getOnlyInVertex(split);
+		for(int i = 0; i < numVertices; i++)
+			if(active[i] == 1 && adj[split][i] == 1)
+				outEdges.add(new Edge(vertices[split], vertices[i], prob[split][i]));
 		
-		vertices[inVertex].setTime(vertices[inVertex].getTime() + time + vertices[split].getTime());
+		for(int i = 0; i < metricObjects.size(); i++){
+			metricValues.get(i).set(
+					split,
+					metricObjects.get(i).reduceSplitGateway(
+							vertices[split], outEdges));
+		}
 		
-		active[split] = 0;
+		vertices[split].setTime(vertices[split].getTime() + getTimesOfSplitGateway(split));
+		vertices[split].setLabel(Label.END);
 		
-		adj[inVertex][split] = 0;
-		
-		vertices[inVertex].setLabel(Label.END);
+		reduceSequence(vertices[getOnlyInVertex(split)], vertices[split]);
 	}
 
 	private void reduceSplitJoinGateway(int split, int join) {
 		System.out.println("reduceSplitJoinGateway " + split + " " + join);
+		
+		List<Edge> outEdges = new ArrayList<Edge>();
+		
+		for(int i = 0; i < numVertices; i++)
+			if(active[i] == 1 && adj[split][i] == 1)
+				outEdges.add(new Edge(vertices[split], vertices[i], prob[split][i]));
+		
+		for(int i = 0; i < metricObjects.size(); i++){
+			metricValues.get(i).set(
+					split,
+					metricObjects.get(i).reduceSplitJoinGateway(
+							vertices[split], vertices[join], outEdges));
+		}
 		
 		double time = getTimesOfSplitGateway(split);
 		
@@ -149,11 +217,11 @@ public class Reducer {
 		vertices[split].setLabel(Label.ACTIVITY);
 		
 		if(isSequence(split, outVertex)){
-			split = reduceSequence(new Edge(split, outVertex));
+			split = reduceSequence(vertices[split], vertices[outVertex]);
 		}
 		
 		if(isSequence(inVertex, split)){
-			split = reduceSequence(new Edge(inVertex, split));
+			split = reduceSequence(vertices[inVertex], vertices[split]);
 		}
 	}
 	
@@ -164,26 +232,35 @@ public class Reducer {
 	}
 
 	// returns the resulting vertex
-	private int reduceSequence(Edge e){
-		System.out.println("Reducing sequence " + e.src + " " + e.dst);
+	private int reduceSequence(Vertex src, Vertex dst){
+		System.out.println("Reducing sequence " + src.getId() + " " + dst.getId());
+
+		// Update metrics
+		for(int i = 0; i < metricObjects.size(); i++){
+			metricValues.get(i).set(src.getId(), metricObjects.get(i).reduceSequence(src, dst));
+		}
 		
 		// Fix edge and metrics: a->b->c becomes (a+b)->c
 			
-		adj[e.src][e.dst] = 0;
-		active[e.dst] = 0; 
+		adj[src.getId()][dst.getId()] = 0;
+		active[dst.getId()] = 0; 
 		
 		int nextVertex;
 		
 		try {
-			nextVertex = getOnlyOutVertex(e.dst); 
-			adj[e.src][nextVertex] = 1;
+			nextVertex = getOnlyOutVertex(dst.getId()); 
+			adj[src.getId()][nextVertex] = 1;
 		} catch(RuntimeException exception){
-			vertices[e.src].setLabel(Label.END);
+			vertices[src.getId()].setLabel(Label.END);
 		}
 
-		vertices[e.src].setTime(vertices[e.src].getTime() + vertices[e.dst].getTime());
+		vertices[src.getId()].setTime(vertices[src.getId()].getTime() + vertices[dst.getId()].getTime());
 		
-		return e.src;
+		return src.getId();
+	}
+	
+	private int reduceSequence(Edge e){
+		return reduceSequence(e.src, e.dst);
 	}
 	
 	private int getOnlyInVertex(int vertex) {
@@ -229,7 +306,7 @@ public class Reducer {
 		for(int i = 0; i < numVertices; i++) if(active[i] != 0 && !vertices[i].getLabel().isGateway()){
 			for(int j = 0; j < numVertices; j++) if(active[j] != 0 && !vertices[j].getLabel().isGateway()){
 				if(adj[i][j] == 1){
-					return new Edge(i, j); 
+					return new Edge(vertices[i], vertices[j]); 
 				}
 			}
 		}
@@ -255,20 +332,11 @@ public class Reducer {
 		
 		for(int i = 0; i < numVertices; i++){
 			if(active[i] != 0){
+				remainingVertex = i;
 				return vertices[i].getTime();
 			}
 		}
 		return -1.0;
 	}
 
-}
-
-class Edge {
-	public int src, dst;
-
-	Edge(int src, int dst){
-		this.src = src;
-		this.dst = dst;
-	}
-	
 }

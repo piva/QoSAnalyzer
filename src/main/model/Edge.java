@@ -1,28 +1,17 @@
 package main.model;
 
 public class Edge {
-	private Vertex src;
-	private Vertex dst;
-	
-	private double probability;
+	public Vertex src, dst;
+	public double prob; // Edge probability
 
-	public Edge(Vertex src, Vertex dst, double probability) {
-		super();
+	public Edge(Vertex src, Vertex dst){
 		this.src = src;
 		this.dst = dst;
-		this.probability = probability;
 	}
 
-	public Vertex getSrc() {
-		return src;
+	public Edge(Vertex src, Vertex dst, double prob){
+		this.src = src;
+		this.dst = dst;
+		this.prob = prob;
 	}
-
-	public Vertex getDst() {
-		return dst;
-	}
-
-	public double getProbability() {
-		return probability;
-	}
-
 }

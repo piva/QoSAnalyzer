@@ -8,6 +8,13 @@ public class Vertex {
 	private double time;
 	private double reliability;
 
+	public Vertex(Vertex other){
+		this.id = other.getId();
+		this.label = other.getLabel();
+		this.time = other.getTime();
+		this.reliability = other.getReliability();
+	}
+	
 	public Vertex(int id) {
 		this.id = id;
 	}
