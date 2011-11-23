@@ -35,9 +35,18 @@ public class Reducer {
 		metricValues = new ArrayList<List<Double>>();
 		metricVertices = new ArrayList<List<Vertex>>();
 		
-		this.adj = adj;
-		this.prob = prob;
-		this.vertices = vertices;
+		this.adj = new int[numVertices][numVertices];
+		this.prob = new double[numVertices][numVertices];
+		this.vertices = new Vertex[numVertices];
+		
+		// Hard copy references
+		for(int i = 0; i < numVertices; i++){
+			this.vertices[i] = new Vertex(vertices[i]);
+			for(int j = 0; j < numVertices; j++){
+				this.adj[i][j] = adj[i][j];
+				this.prob[i][j] = prob[i][j];
+			}
+		}
 		
 		this.numVertices = numVertices;
 		active = new int[numVertices];
@@ -160,7 +169,7 @@ public class Reducer {
 				}
 			}
 		}
-		System.out.println("time " + time);
+		System.out.println("getTimesOfSplitGateway time " + time);
 		
 		return time;
 	}
@@ -175,15 +184,29 @@ public class Reducer {
 				outEdges.add(new Edge(vertices[split], vertices[i], prob[split][i]));
 		
 		for(int i = 0; i < metricObjects.size(); i++){
+			//FIXME: Ta acertando no metricValues e não no metricVertices...
+			// ai quando passa o vertice, eh o vertice  nao ajustado
+			// FIXME: agora puxou... tem que ser consistente.
+			// Reduce split
 			metricValues.get(i).set(
 					split,
 					metricObjects.get(i).reduceSplitGateway(
 							vertices[split], outEdges));
+			
+			
+			// FIXME: Só pode reduzir se o in não for gateway
+			// reduce in sequence
+			metricValues.get(i).set(
+					getOnlyInVertex(split),
+					metricObjects.get(i).reduceSequence(
+							metricVertices.get(i).get(getOnlyInVertex(split)),
+							metricVertices.get(i).get(split)));
 		}
 		
 		vertices[split].setTime(vertices[split].getTime() + getTimesOfSplitGateway(split));
 		vertices[split].setLabel(Label.END);
 		
+		// FIXME: Só pode reduzir se o in não for gateway
 		reduceSequence(vertices[getOnlyInVertex(split)], vertices[split]);
 	}
 

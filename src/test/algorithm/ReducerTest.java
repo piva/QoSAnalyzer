@@ -2,6 +2,7 @@ package test.algorithm;
 
 import static org.junit.Assert.assertEquals;
 import main.algorithm.Reducer;
+import main.metrics.PerimeterMetric;
 import main.metrics.ResponseTimeMetric;
 import main.model.Label;
 import main.model.Vertex;
@@ -53,10 +54,25 @@ public class ReducerTest {
 		vertices[0].setLabel(Label.START);
 		vertices[1].setLabel(Label.END);
 		
+		System.out.println(vertices[0].getTime() + " " + vertices[1].getTime());
+		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(vertices[0].getTime() + vertices[1].getTime(), r.reduce(), 1e-9);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
 		
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		System.out.println(vertices[0].getTime() + " " + vertices[1].getTime());
+		
+		assertEquals(vertices[0].getTime() + vertices[1].getTime(), result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(vertices[0].getTime() + vertices[1].getTime(), r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
@@ -89,8 +105,19 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(3.0, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
 		
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(3.0, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(3.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
@@ -119,7 +146,19 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(6.0, r.reduce(), 1e-9);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		//r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		//assertEquals(6.0, result, 1e-9);
+		//assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(7.0, r.getMetricResult(pName), 1e-9);
 		
 	}
 	
@@ -152,7 +191,14 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(9.0, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(9.0, result, 1e-9);
+		assertEquals(r.getMetricResult("ResponseTime"), result, 1e-9);
 	}
 	
 	@Test
@@ -182,7 +228,14 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(6.0, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(6.0, result, 1e-9);
+		assertEquals(r.getMetricResult("ResponseTime"), result, 1e-9);
 	}
 	
 	@Test
@@ -212,7 +265,14 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(6.0, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(6.0, result, 1e-9);
+		assertEquals(r.getMetricResult("ResponseTime"), result, 1e-9);
 	}
 	
 	@Test
@@ -245,7 +305,14 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(5.25, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(5.25, result, 1e-9);
+		assertEquals(r.getMetricResult("ResponseTime"), result, 1e-9);
 	}
 	
 	@Test
@@ -278,7 +345,14 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(5.75, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(5.75, result, 1e-9);
+		assertEquals(r.getMetricResult("ResponseTime"), result, 1e-9);
 	}
 
 	@Test
@@ -328,7 +402,14 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(5.5, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(5.5, result, 1e-9);
+		assertEquals(r.getMetricResult("ResponseTime"), result, 1e-9);
 	}
 	
 	@Test
@@ -378,7 +459,19 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(12, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(12, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(17.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
@@ -438,75 +531,18 @@ public class ReducerTest {
 		
 		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(5.0, r.reduce(), 1e-9);
-	}
-	
-	@Test
-	public void testBusinessProcessWithRegisterMetrics(){
-		//	Business Process Model And Notation P. 299
-		
-		final int nodes = 14;
-		
-		adj[0][1] = 1;
-		adj[1][2] = 1;
-		adj[2][3] = 1;
-		adj[2][10] = 1;
-		adj[3][4] = 1;
-		adj[4][5] = 1;
-		adj[5][9] = 1;
-		adj[4][6] = 1;
-		adj[6][7] = 1;
-		adj[7][8] = 1;
-		adj[8][9] = 1;
-		adj[9][11] = 1;
-		adj[10][11] = 1;
-		adj[11][12] = 1;
-		adj[12][13] = 1;
-		
-		prob[2][3] = 0.5;
-		prob[2][10] = 0.5;
-		
-		vertices[0].setLabel(Label.START);
-		vertices[1].setLabel(Label.ACTIVITY);
-		vertices[2].setLabel(Label.EXCLUSIVE_SPLIT);
-		vertices[3].setLabel(Label.ACTIVITY);
-		vertices[4].setLabel(Label.FORK_SPLIT);
-		vertices[5].setLabel(Label.ACTIVITY);
-		vertices[6].setLabel(Label.ACTIVITY);
-		vertices[7].setLabel(Label.ACTIVITY);
-		vertices[8].setLabel(Label.ACTIVITY);
-		vertices[9].setLabel(Label.FORK_JOIN);
-		vertices[10].setLabel(Label.ACTIVITY);
-		vertices[11].setLabel(Label.EXCLUSIVE_JOIN);
-		vertices[12].setLabel(Label.ACTIVITY);
-		vertices[13].setLabel(Label.END);
-		
-		vertices[0].setTime(0.0);
-		vertices[1].setTime(1.0);
-		vertices[2].setTime(0.0);
-		vertices[3].setTime(1.0);
-		vertices[4].setTime(0.0);
-		vertices[5].setTime(1.0);
-		vertices[6].setTime(1.0);
-		vertices[7].setTime(1.0);
-		vertices[8].setTime(1.0);
-		vertices[9].setTime(0.0);
-		vertices[10].setTime(2.0);
-		vertices[11].setTime(0.0);
-		vertices[12].setTime(1.0);
-		vertices[13].setTime(0.0);
-		
-		Reducer r = new Reducer(adj, nodes, prob, vertices);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
 		
 		ResponseTimeMetric rtm = new ResponseTimeMetric();
-		r.registerMetric("ResponseTime", rtm);
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
 		
 		Double result = r.reduce();
 		
 		assertEquals(5.0, result, 1e-9);
-		
-		assertEquals(r.getMetricResult("ResponseTime"), result, 1e-9);
-
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(9.0, r.getMetricResult(pName), 1e-9);
 	}
-
 }
