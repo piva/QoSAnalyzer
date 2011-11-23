@@ -176,31 +176,24 @@ public class Reducer {
 	
 	private void reduceSplitGateway(int split) {
 		System.out.println("reduceSplitGateway " + split);
-		
-		List<Edge> outEdges = new ArrayList<Edge>();
-		
-		for(int i = 0; i < numVertices; i++)
-			if(active[i] == 1 && adj[split][i] == 1)
-				outEdges.add(new Edge(vertices[split], vertices[i], prob[split][i]));
-		
+
+		// fix metrics
 		for(int i = 0; i < metricObjects.size(); i++){
+			List<Edge> outEdges = new ArrayList<Edge>();
+			for(int j = 0; j < numVertices; j++)
+				if(active[j] == 1 && adj[split][j] == 1)
+					outEdges.add(new Edge(metricVertices.get(i).get(split),
+						metricVertices.get(i).get(j), prob[split][j]));
+		
 			//FIXME: Ta acertando no metricValues e não no metricVertices...
 			// ai quando passa o vertice, eh o vertice  nao ajustado
 			// FIXME: agora puxou... tem que ser consistente.
 			// Reduce split
-			metricValues.get(i).set(
-					split,
-					metricObjects.get(i).reduceSplitGateway(
-							vertices[split], outEdges));
+			Double value = metricObjects.get(i).reduceSplitGateway(
+					metricVertices.get(i).get(split), outEdges);
 			
-			
-			// FIXME: Só pode reduzir se o in não for gateway
-			// reduce in sequence
-			metricValues.get(i).set(
-					getOnlyInVertex(split),
-					metricObjects.get(i).reduceSequence(
-							metricVertices.get(i).get(getOnlyInVertex(split)),
-							metricVertices.get(i).get(split)));
+			metricValues.get(i).set(split, value);
+			metricVertices.get(i).get(split).setTime(value);
 		}
 		
 		vertices[split].setTime(vertices[split].getTime() + getTimesOfSplitGateway(split));
@@ -213,17 +206,20 @@ public class Reducer {
 	private void reduceSplitJoinGateway(int split, int join) {
 		System.out.println("reduceSplitJoinGateway " + split + " " + join);
 		
-		List<Edge> outEdges = new ArrayList<Edge>();
-		
-		for(int i = 0; i < numVertices; i++)
-			if(active[i] == 1 && adj[split][i] == 1)
-				outEdges.add(new Edge(vertices[split], vertices[i], prob[split][i]));
 		
 		for(int i = 0; i < metricObjects.size(); i++){
-			metricValues.get(i).set(
-					split,
-					metricObjects.get(i).reduceSplitJoinGateway(
-							vertices[split], vertices[join], outEdges));
+			List<Edge> outEdges = new ArrayList<Edge>();
+			for(int j = 0; j < numVertices; j++)
+				if(active[j] == 1 && adj[split][j] == 1)
+					outEdges.add(new Edge(metricVertices.get(i).get(split),
+						metricVertices.get(i).get(j), prob[split][j]));
+		
+			Double value = metricObjects.get(i).reduceSplitJoinGateway(
+					metricVertices.get(i).get(split), 
+					metricVertices.get(i).get(join),
+					outEdges);
+			metricValues.get(i).set(split, value);
+			metricVertices.get(i).get(split).setTime(value);
 		}
 		
 		double time = getTimesOfSplitGateway(split);
@@ -260,7 +256,10 @@ public class Reducer {
 
 		// Update metrics
 		for(int i = 0; i < metricObjects.size(); i++){
-			metricValues.get(i).set(src.getId(), metricObjects.get(i).reduceSequence(src, dst));
+			Double value = metricObjects.get(i).reduceSequence(metricVertices.get(i).get(src.getId()), 
+					metricVertices.get(i).get(dst.getId()));
+				metricValues.get(i).set(src.getId(), value);
+				metricVertices.get(i).get(src.getId()).setTime(value);
 		}
 		
 		// Fix edge and metrics: a->b->c becomes (a+b)->c

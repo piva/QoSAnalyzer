@@ -14,12 +14,12 @@ public class ResponseTimeMetric extends Metric {
 	}
 
 	@Override
-	public double reduceSequence(Vertex src, Vertex dst) {
+	public Double reduceSequence(Vertex src, Vertex dst) {
 		return src.getTime() + dst.getTime();
 	}
 	
 	@Override
-	public double reduceSplitJoinGateway(Vertex split, Vertex join,
+	public Double reduceSplitJoinGateway(Vertex split, Vertex join,
 			List<Edge> neighbors) {
 		double time = 0.0;
 		
@@ -36,7 +36,7 @@ public class ResponseTimeMetric extends Metric {
 	}
 
 	@Override
-	public double reduceSplitGateway(Vertex split, List<Edge> neighbors) {
+	public Double reduceSplitGateway(Vertex split, List<Edge> neighbors) {
 		double time = 0.0;
 		
 		for(Edge e : neighbors){
@@ -50,7 +50,7 @@ public class ResponseTimeMetric extends Metric {
 		}
 		return split.getTime() + time;
 	}
-
+/*
 	@Override
 	public double reduceParallelSplitGateway(Vertex split,
 			List<Vertex> neighbors) {
@@ -92,5 +92,5 @@ public class ResponseTimeMetric extends Metric {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
+*/
 }

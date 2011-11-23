@@ -13,13 +13,13 @@ public class PerimeterMetric extends Metric {
 	}
 
 	@Override
-	public double reduceSequence(Vertex src, Vertex dst) {
+	public Double reduceSequence(Vertex src, Vertex dst) {
 		System.out.println("Reducing sequence " + src.getId() + " " + dst.getId() + " " + src.getTime() + " " + dst.getTime());
 		return src.getTime() + dst.getTime();
 	}
 
 	@Override
-	public double reduceSplitJoinGateway(Vertex split, Vertex join,
+	public Double reduceSplitJoinGateway(Vertex split, Vertex join,
 			List<Edge> neighbors) {
 		double time = split.getTime() + join.getTime();
 		for(Edge e : neighbors){
@@ -29,7 +29,7 @@ public class PerimeterMetric extends Metric {
 	}
 
 	@Override
-	public double reduceSplitGateway(Vertex split, List<Edge> neighbors) {
+	public Double reduceSplitGateway(Vertex split, List<Edge> neighbors) {
 		double time = split.getTime();
 		for(Edge e : neighbors){
 			System.out.println("Adding neighbor " + e.dst.getId() + " " + e.dst.getTime());
@@ -38,9 +38,9 @@ public class PerimeterMetric extends Metric {
 		System.out.println("Split time " + time);
 		return time;
 	}
-
+/*
 	@Override
-	public double reduceParallelSplitGateway(Vertex split,
+	public ouble reduceParallelSplitGateway(Vertex split,
 			List<Vertex> neighbors) {
 		// TODO Auto-generated method stub
 		return 0;
@@ -80,5 +80,5 @@ public class PerimeterMetric extends Metric {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
+*/
 }
