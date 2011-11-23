@@ -185,10 +185,6 @@ public class Reducer {
 					outEdges.add(new Edge(metricVertices.get(i).get(split),
 						metricVertices.get(i).get(j), prob[split][j]));
 		
-			//FIXME: Ta acertando no metricValues e não no metricVertices...
-			// ai quando passa o vertice, eh o vertice  nao ajustado
-			// FIXME: agora puxou... tem que ser consistente.
-			// Reduce split
 			Double value = metricObjects.get(i).reduceSplitGateway(
 					metricVertices.get(i).get(split), outEdges);
 			

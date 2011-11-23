@@ -21,18 +21,7 @@ public class ResponseTimeMetric extends Metric {
 	@Override
 	public Double reduceSplitJoinGateway(Vertex split, Vertex join,
 			List<Edge> neighbors) {
-		double time = 0.0;
-		
-		for(Edge e : neighbors){
-			if(split.getLabel() == Label.FORK_SPLIT){
-				time = Math.max(time, e.dst.getTime());
-			} else if (split.getLabel() == Label.INCLUSIVE_SPLIT
-					|| split.getLabel() == Label.EXCLUSIVE_SPLIT) {
-				time += e.prob * e.dst.getTime(); 
-			}
-			
-		}
-		return split.getTime() + time + join.getTime();
+		return reduceSplitGateway(split, neighbors) + join.getTime();
 	}
 
 	@Override

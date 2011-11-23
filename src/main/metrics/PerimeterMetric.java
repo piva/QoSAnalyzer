@@ -14,28 +14,21 @@ public class PerimeterMetric extends Metric {
 
 	@Override
 	public Double reduceSequence(Vertex src, Vertex dst) {
-		System.out.println("Reducing sequence " + src.getId() + " " + dst.getId() + " " + src.getTime() + " " + dst.getTime());
 		return src.getTime() + dst.getTime();
 	}
 
 	@Override
 	public Double reduceSplitJoinGateway(Vertex split, Vertex join,
 			List<Edge> neighbors) {
-		double time = split.getTime() + join.getTime();
-		for(Edge e : neighbors){
-			time += e.dst.getTime();
-		}
-		return time;
+		return reduceSplitGateway(split, neighbors) + join.getTime();
 	}
 
 	@Override
 	public Double reduceSplitGateway(Vertex split, List<Edge> neighbors) {
 		double time = split.getTime();
 		for(Edge e : neighbors){
-			System.out.println("Adding neighbor " + e.dst.getId() + " " + e.dst.getTime());
 			time += e.dst.getTime();
 		}
-		System.out.println("Split time " + time);
 		return time;
 	}
 /*
