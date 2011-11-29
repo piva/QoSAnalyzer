@@ -22,16 +22,14 @@ public abstract class Metric {
 	public abstract Double reduceSplitJoinGateway(Vertex split, Vertex join, List<Edge> neighbors);
 	public abstract Double reduceSplitGateway(Vertex split, List<Edge> neighbors);
 	
-	// Only split gateways
-	/*public abstract double reduceParallelSplitGateway(Vertex split, List<Vertex> neighbors);
-	public abstract double reduceExclusiveSplitGateway(Vertex split, List<Vertex> neighbors);
-	public abstract double reduceInclusiveSplitGateway(Vertex split, List<Vertex> neighbors);*/
+	/*public abstract Double reduceParallelSplitJoinGateway(Vertex split, Vertex join, List<Edge> neighbors);
+	public abstract Double reduceParallelSplitGateway(Vertex split, List<Edge> neighbors);
 	
-	// Split-Join gateways
-	/*public abstract double reduceParallelSplitJoinGateway(Vertex split, Vertex join, List<Vertex> neighbors);
-	public abstract double reduceExclusiveSplitJoinGateway(Vertex split, Vertex join, List<Vertex> neighbors);
-	public abstract double reduceInclusiveSplitJoinGateway(Vertex split, Vertex join, List<Vertex> neighbors);*/
+	public abstract Double reduceExclusiveSplitJoinGateway(Vertex split, Vertex join, List<Edge> neighbors);
+	public abstract Double reduceExclusiveSplitGateway(Vertex split, List<Edge> neighbors);
 	
+	public abstract Double reduceInclusiveSplitJoinGateway(Vertex split, Vertex join, List<Edge> neighbors);
+	public abstract Double reduceInclusiveSplitGateway(Vertex split, List<Edge> neighbors);*/
 
 }
 
