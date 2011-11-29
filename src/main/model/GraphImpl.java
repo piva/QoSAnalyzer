@@ -36,7 +36,7 @@ public class GraphImpl implements Graph {
 
 	@Override
 	public void addEdge(Edge e) {
-		adjacencyMatrix[e.getSrc().getId()][e.getDst().getId()] = e;
+		adjacencyMatrix[e.src.getId()][e.dst.getId()] = e;
 	}
 
 	@Override

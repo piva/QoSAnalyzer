@@ -1,24 +1,46 @@
 package test.algorithm;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import main.algorithm.Reducer;
+import main.metrics.PerimeterMetric;
+import main.metrics.ResponseTimeMetric;
 import main.model.Label;
+import main.model.Vertex;
 
+import org.junit.Before;
 import org.junit.Test;
 
 public class ReducerTest {
+
+	final int maxNodes = 100;
+	
+	private int adj[][];
+	private double prob[][];
+	private Vertex vertices[];
+	
+	@Before
+	public void setup(){
+		adj = new int[maxNodes][maxNodes];
+		prob = new double[maxNodes][maxNodes];
+		vertices = new Vertex[maxNodes];
+		
+		for(int i = 0; i < maxNodes; i++){
+			vertices[i] = new Vertex(i, 0.0, 1.0);
+			for(int j = 0; j < maxNodes; j++){
+				adj[i][j] = 0;
+				prob[i][j] = 1.0;
+			}
+		}
+	}
 	
 	@Test
 	public void testSimpleSequence(){
-		int adj[][] = new int[2][2];
-		double prob[][] = new double[2][2];
-		double times[] = new double[2];
-		Label labels[] = new Label[2];
+		final int nodes = 2;
 		
 		adj[0][0] = 0;
 		adj[0][1] = 1;
 		adj[1][0] = 0;
-		adj[1][0] = 0;
+		adj[1][1] = 0;
 		
 		for(int i = 0; i < 2; i++){
 			for(int j = 0; j < 2; j++){
@@ -26,24 +48,36 @@ public class ReducerTest {
 			}
 		}
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
 		
-		labels[0] = Label.START;
-		labels[1] = Label.END;
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.END);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		System.out.println(vertices[0].getTime() + " " + vertices[1].getTime());
 		
-		assertEquals(2.0, r.reduce(), 1e-9);
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		System.out.println(vertices[0].getTime() + " " + vertices[1].getTime());
+		
+		assertEquals(vertices[0].getTime() + vertices[1].getTime(), result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(vertices[0].getTime() + vertices[1].getTime(), r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
 	public void testSimpleSequence2(){
-		int adj[][] = new int[3][3];
-		double prob[][] = new double[3][3];
-		double times[] = new double[3];
-		Label labels[] = new Label[3];
+		final int nodes = 3;
 		
 		adj[0][0] = 0;
 		adj[0][1] = 1;
@@ -61,33 +95,34 @@ public class ReducerTest {
 			}
 		}
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 1.0;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(1.0);
 		
-		labels[0] = Label.START;
-		labels[1] = Label.ACTIVITY;
-		labels[2] = Label.END;
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.ACTIVITY);
+		vertices[2].setLabel(Label.END);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(3.0, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
 		
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(3.0, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(3.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
 	public void testSimpleFork(){
-		int adj[][] = new int[6][6];
-		double prob[][] = new double[6][6];
-		double times[] = new double[6];
-		Label labels[] = new Label[6];
-		
-		for(int i = 0; i < 6; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 6; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 6;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -95,45 +130,41 @@ public class ReducerTest {
 		adj[2][4] = 1;
 		adj[3][5] = 1;
 		
-		for(int i = 0; i < 6; i++){
-			for(int j = 0; j < 6; j++){
-				prob[i][j] = 1.0;
-			}
-		}
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.FORK_SPLIT);
+		vertices[2].setLabel(Label.ACTIVITY);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.END);
+		vertices[5].setLabel(Label.END);
 		
-		labels[0] = Label.START;
-		labels[1] = Label.FORK_SPLIT;
-		labels[2] = Label.ACTIVITY;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.END;
-		labels[5] = Label.END;
+		vertices[0].setTime(0.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(1.0);
+		vertices[3].setTime(5.0);
+		vertices[4].setTime(0.0);
+		vertices[5].setTime(0.0);
 		
-		times[0] = 0.0;
-		times[1] = 1.0;
-		times[2] = 1.0;
-		times[3] = 5.0;
-		times[4] = 0.0;
-		times[5] = 0.0;
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
 		
-		assertEquals(6.0, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(6.0, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(7.0, r.getMetricResult(pName), 1e-9);
 		
 	}
 	
 	@Test
 	public void testSimpleFork2(){
-		int adj[][] = new int[7][7];
-		double prob[][] = new double[7][7];
-		double times[] = new double[7];
-		Label labels[] = new Label[7];
-		
-		for(int i = 0; i < 7; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 7; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 7;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -142,46 +173,42 @@ public class ReducerTest {
 		adj[3][5] = 1;
 		adj[4][6] = 1;
 		
-		for(int i = 0; i < 7; i++){
-			for(int j = 0; j < 7; j++){
-				prob[i][j] = 1.0;
-			}
-		}
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.ACTIVITY);
+		vertices[2].setLabel(Label.FORK_SPLIT);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.ACTIVITY);
+		vertices[5].setLabel(Label.END);
+		vertices[6].setLabel(Label.END);
 		
-		labels[0] = Label.START;
-		labels[1] = Label.ACTIVITY;
-		labels[2] = Label.FORK_SPLIT;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.ACTIVITY;
-		labels[5] = Label.END;
-		labels[6] = Label.END;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(1.0);
+		vertices[3].setTime(1.0);
+		vertices[4].setTime(3.0);
+		vertices[5].setTime(5.0);
+		vertices[6].setTime(1.0);
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 1.0;
-		times[3] = 1.0;
-		times[4] = 3.0;
-		times[5] = 5.0;
-		times[6] = 1.0;
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
 		
-		assertEquals(9.0, r.reduce(), 1e-9);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(9.0, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(13.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
 	public void testSimpleForkJoin(){
-		int adj[][] = new int[6][6];
-		double prob[][] = new double[6][6];
-		double times[] = new double[6];
-		Label labels[] = new Label[6];
-		
-		for(int i = 0; i < 6; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 6; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 6;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -190,44 +217,40 @@ public class ReducerTest {
 		adj[3][4] = 1;
 		adj[4][5] = 1;
 
-		for(int i = 0; i < 6; i++){
-			for(int j = 0; j < 6; j++){
-				prob[i][j] = 1.0;
-			}
-		}
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.FORK_SPLIT);
+		vertices[2].setLabel(Label.ACTIVITY);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.FORK_JOIN);
+		vertices[5].setLabel(Label.END);
 		
-		labels[0] = Label.START;
-		labels[1] = Label.FORK_SPLIT;
-		labels[2] = Label.ACTIVITY;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.FORK_JOIN;
-		labels[5] = Label.END;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(1.0);
+		vertices[3].setTime(2.0);
+		vertices[4].setTime(1.0);
+		vertices[5].setTime(1.0);
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 1.0;
-		times[3] = 2.0;
-		times[4] = 1.0;
-		times[5] = 1.0;
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
 		
-		assertEquals(6.0, r.reduce(), 1e-9);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(6.0, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(7.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
 	public void testSimpleForkJoin2(){
-		int adj[][] = new int[6][6];
-		double prob[][] = new double[6][6];
-		double times[] = new double[6];
-		Label labels[] = new Label[6];
-		
-		for(int i = 0; i < 6; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 6; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 6;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -236,44 +259,40 @@ public class ReducerTest {
 		adj[3][4] = 1;
 		adj[4][5] = 1;
 
-		for(int i = 0; i < 6; i++){
-			for(int j = 0; j < 6; j++){
-				prob[i][j] = 1.0;
-			}
-		}
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.FORK_SPLIT);
+		vertices[2].setLabel(Label.ACTIVITY);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.FORK_JOIN);
+		vertices[5].setLabel(Label.END);
 		
-		labels[0] = Label.START;
-		labels[1] = Label.FORK_SPLIT;
-		labels[2] = Label.ACTIVITY;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.FORK_JOIN;
-		labels[5] = Label.END;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(2.0);
+		vertices[3].setTime(1.0);
+		vertices[4].setTime(1.0);
+		vertices[5].setTime(1.0);
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 2.0;
-		times[3] = 1.0;
-		times[4] = 1.0;
-		times[5] = 1.0;
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
 		
-		assertEquals(6.0, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(6.0, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(7.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
 	public void testSimpleExclusiveSplitJoin(){
-		int adj[][] = new int[6][6];
-		double prob[][] = new double[6][6];
-		double times[] = new double[6];
-		Label labels[] = new Label[6];
-		
-		for(int i = 0; i < 6; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 6; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 6;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -282,47 +301,43 @@ public class ReducerTest {
 		adj[3][4] = 1;
 		adj[4][5] = 1;
 
-		for(int i = 0; i < 6; i++){
-			for(int j = 0; j < 6; j++){
-				prob[i][j] = 1.0;
-			}
-		}
-		
 		prob[1][2] = 0.75;
 		prob[1][3] = 0.25;
 		
-		labels[0] = Label.START;
-		labels[1] = Label.EXCLUSIVE_SPLIT;
-		labels[2] = Label.ACTIVITY;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.EXCLUSIVE_JOIN;
-		labels[5] = Label.END;
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.EXCLUSIVE_SPLIT);
+		vertices[2].setLabel(Label.ACTIVITY);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.EXCLUSIVE_JOIN);
+		vertices[5].setLabel(Label.END);
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 1.0;
-		times[3] = 2.0;
-		times[4] = 1.0;
-		times[5] = 1.0;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(1.0);
+		vertices[3].setTime(2.0);
+		vertices[4].setTime(1.0);
+		vertices[5].setTime(1.0);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(5.25, r.reduce(), 1e-9);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(5.25, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(7.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
 	public void testSimpleExclusiveSplitJoin2(){
-		int adj[][] = new int[6][6];
-		double prob[][] = new double[6][6];
-		double times[] = new double[6];
-		Label labels[] = new Label[6];
-		
-		for(int i = 0; i < 6; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 6; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 6;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -331,32 +346,38 @@ public class ReducerTest {
 		adj[3][4] = 1;
 		adj[4][5] = 1;
 
-		for(int i = 0; i < 6; i++){
-			for(int j = 0; j < 6; j++){
-				prob[i][j] = 1.0;
-			}
-		}
-		
 		prob[1][2] = 0.75;
 		prob[1][3] = 0.25;
 		
-		labels[0] = Label.START;
-		labels[1] = Label.EXCLUSIVE_SPLIT;
-		labels[2] = Label.ACTIVITY;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.EXCLUSIVE_JOIN;
-		labels[5] = Label.END;
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.EXCLUSIVE_SPLIT);
+		vertices[2].setLabel(Label.ACTIVITY);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.EXCLUSIVE_JOIN);
+		vertices[5].setLabel(Label.END);
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 2.0;
-		times[3] = 1.0;
-		times[4] = 1.0;
-		times[5] = 1.0;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(2.0);
+		vertices[3].setTime(1.0);
+		vertices[4].setTime(1.0);
+		vertices[5].setTime(1.0);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(5.75, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(5.75, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(7.0, r.getMetricResult(pName), 1e-9);
 	}
 
 	@Test
@@ -369,18 +390,7 @@ public class ReducerTest {
 		// S -> F
 		//      |
 		//      -> E 
-		
-		int adj[][] = new int[9][9];
-		double prob[][] = new double[9][9];
-		double times[] = new double[9];
-		Label labels[] = new Label[9];
-		
-		for(int i = 0; i < 9; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 9; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 9;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -392,38 +402,44 @@ public class ReducerTest {
 		adj[6][7] = 1;
 		adj[7][8] = 1;
 
-		for(int i = 0; i < 9; i++){
-			for(int j = 0; j < 9; j++){
-				prob[i][j] = 1.0;
-			}
-		}
-		
 		prob[4][5] = 0.5;
 		prob[4][6] = 0.5;
 		
-		labels[0] = Label.START;
-		labels[1] = Label.FORK_SPLIT;
-		labels[2] = Label.END;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.EXCLUSIVE_SPLIT;
-		labels[5] = Label.ACTIVITY;
-		labels[6] = Label.ACTIVITY;
-		labels[7] = Label.EXCLUSIVE_JOIN;
-		labels[8] = Label.END;
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.FORK_SPLIT);
+		vertices[2].setLabel(Label.END);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.EXCLUSIVE_SPLIT);
+		vertices[5].setLabel(Label.ACTIVITY);
+		vertices[6].setLabel(Label.ACTIVITY);
+		vertices[7].setLabel(Label.EXCLUSIVE_JOIN);
+		vertices[8].setLabel(Label.END);
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 3.0;
-		times[3] = 1.0;
-		times[4] = 0.0;
-		times[5] = 2.0;
-		times[6] = 1.0;
-		times[7] = 0.0;
-		times[8] = 1.0;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(3.0);
+		vertices[3].setTime(1.0);
+		vertices[4].setTime(0.0);
+		vertices[5].setTime(2.0);
+		vertices[6].setTime(1.0);
+		vertices[7].setTime(0.0);
+		vertices[8].setTime(1.0);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(5.5, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(5.5, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(10.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
@@ -436,18 +452,7 @@ public class ReducerTest {
 		// S -> F
 		//      |
 		//      -> E 
-		
-		int adj[][] = new int[9][9];
-		double prob[][] = new double[9][9];
-		double times[] = new double[9];
-		Label labels[] = new Label[9];
-		
-		for(int i = 0; i < 9; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < 9; j++){
-				adj[i][j] = 0;
-			}
-		}
+		final int nodes = 9;
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -459,38 +464,44 @@ public class ReducerTest {
 		adj[6][7] = 1;
 		adj[7][8] = 1;
 
-		for(int i = 0; i < 9; i++){
-			for(int j = 0; j < 9; j++){
-				prob[i][j] = 1.0;
-			}
-		}
-		
 		prob[4][5] = 0.5;
 		prob[4][6] = 0.5;
 		
-		labels[0] = Label.START;
-		labels[1] = Label.FORK_SPLIT;
-		labels[2] = Label.END;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.EXCLUSIVE_SPLIT;
-		labels[5] = Label.ACTIVITY;
-		labels[6] = Label.ACTIVITY;
-		labels[7] = Label.EXCLUSIVE_JOIN;
-		labels[8] = Label.END;
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.FORK_SPLIT);
+		vertices[2].setLabel(Label.END);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.EXCLUSIVE_SPLIT);
+		vertices[5].setLabel(Label.ACTIVITY);
+		vertices[6].setLabel(Label.ACTIVITY);
+		vertices[7].setLabel(Label.EXCLUSIVE_JOIN);
+		vertices[8].setLabel(Label.END);
 		
-		times[0] = 1.0;
-		times[1] = 1.0;
-		times[2] = 10.0;
-		times[3] = 1.0;
-		times[4] = 0.0;
-		times[5] = 2.0;
-		times[6] = 1.0;
-		times[7] = 0.0;
-		times[8] = 1.0;
+		vertices[0].setTime(1.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(10.0);
+		vertices[3].setTime(1.0);
+		vertices[4].setTime(0.0);
+		vertices[5].setTime(2.0);
+		vertices[6].setTime(1.0);
+		vertices[7].setTime(0.0);
+		vertices[8].setTime(1.0);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(12, r.reduce(), 1e-9);
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(12, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(17.0, r.getMetricResult(pName), 1e-9);
 	}
 	
 	@Test
@@ -498,18 +509,6 @@ public class ReducerTest {
 		//	Business Process Model And Notation P. 299
 		
 		final int nodes = 14;
-		
-		int adj[][] = new int[nodes][nodes];
-		double prob[][] = new double[nodes][nodes];
-		double times[] = new double[nodes];
-		Label labels[] = new Label[nodes];
-		
-		for(int i = 0; i < nodes; i++){
-			times[i] = 0.0;
-			for(int j = 0; j < nodes; j++){
-				adj[i][j] = 0;
-			}
-		}
 		
 		adj[0][1] = 1;
 		adj[1][2] = 1;
@@ -526,49 +525,54 @@ public class ReducerTest {
 		adj[10][11] = 1;
 		adj[11][12] = 1;
 		adj[12][13] = 1;
-
-		for(int i = 0; i < nodes; i++){
-			for(int j = 0; j < nodes; j++){
-				prob[i][j] = 1.0;
-			}
-		}
 		
 		prob[2][3] = 0.5;
 		prob[2][10] = 0.5;
 		
-		labels[0] = Label.START;
-		labels[1] = Label.ACTIVITY;
-		labels[2] = Label.EXCLUSIVE_SPLIT;
-		labels[3] = Label.ACTIVITY;
-		labels[4] = Label.FORK_SPLIT;
-		labels[5] = Label.ACTIVITY;
-		labels[6] = Label.ACTIVITY;
-		labels[7] = Label.ACTIVITY;
-		labels[8] = Label.ACTIVITY;
-		labels[9] = Label.FORK_JOIN;
-		labels[10] = Label.ACTIVITY;
-		labels[11] = Label.EXCLUSIVE_JOIN;
-		labels[12] = Label.ACTIVITY;
-		labels[13] = Label.END;
+		vertices[0].setLabel(Label.START);
+		vertices[1].setLabel(Label.ACTIVITY);
+		vertices[2].setLabel(Label.EXCLUSIVE_SPLIT);
+		vertices[3].setLabel(Label.ACTIVITY);
+		vertices[4].setLabel(Label.FORK_SPLIT);
+		vertices[5].setLabel(Label.ACTIVITY);
+		vertices[6].setLabel(Label.ACTIVITY);
+		vertices[7].setLabel(Label.ACTIVITY);
+		vertices[8].setLabel(Label.ACTIVITY);
+		vertices[9].setLabel(Label.FORK_JOIN);
+		vertices[10].setLabel(Label.ACTIVITY);
+		vertices[11].setLabel(Label.EXCLUSIVE_JOIN);
+		vertices[12].setLabel(Label.ACTIVITY);
+		vertices[13].setLabel(Label.END);
 		
-		times[0] = 0.0;
-		times[1] = 1.0;
-		times[2] = 0.0;
-		times[3] = 1.0;
-		times[4] = 0.0;
-		times[5] = 1.0;
-		times[6] = 1.0;
-		times[7] = 1.0;
-		times[8] = 1.0;
-		times[9] = 0.0;
-		times[10] = 2.0;
-		times[11] = 0.0;
-		times[12] = 1.0;
-		times[13] = 0.0;
+		vertices[0].setTime(0.0);
+		vertices[1].setTime(1.0);
+		vertices[2].setTime(0.0);
+		vertices[3].setTime(1.0);
+		vertices[4].setTime(0.0);
+		vertices[5].setTime(1.0);
+		vertices[6].setTime(1.0);
+		vertices[7].setTime(1.0);
+		vertices[8].setTime(1.0);
+		vertices[9].setTime(0.0);
+		vertices[10].setTime(2.0);
+		vertices[11].setTime(0.0);
+		vertices[12].setTime(1.0);
+		vertices[13].setTime(0.0);
 		
-		Reducer r = new Reducer(adj, prob, times, labels);
+		Reducer r = new Reducer(adj, nodes, prob, vertices);
 		
-		assertEquals(4.0, r.reduce(), 1e-9);
+		PerimeterMetric pm = new PerimeterMetric();
+		String pName = "Perimeter";
+		r.registerMetric(pName, pm);
+		
+		ResponseTimeMetric rtm = new ResponseTimeMetric();
+		String metricName = "ResponseTime";
+		r.registerMetric(metricName, rtm);
+		
+		Double result = r.reduce();
+		
+		assertEquals(5.0, result, 1e-9);
+		assertEquals(r.getMetricResult(metricName), result, 1e-9);
+		assertEquals(9.0, r.getMetricResult(pName), 1e-9);
 	}
-
 }
